@@ -1,14 +1,16 @@
-<#
+﻿<#
 .SYNOPSIS
     Show Love 本地开发环境管理脚本 (PowerShell)
 .DESCRIPTION
     一键启动/停止所有后端基础设施和微服务。
+    Windows: 使用本地 PostgreSQL/Redis/RustFS/NATS，跳过 Docker。
+    Linux/Mac: 通过 Docker Compose 管理基础设施。
 .PARAMETER Action
     start    - 启动基础设施 + 全部微服务
     stop     - 停止全部服务
     restart  - 重启全部服务
     status   - 查看服务运行状态
-    infra    - 仅启动基础设施 (DB/Redis/MinIO/NATS)
+    infra    - 仅启动基础设施 (DB/Redis/RustFS(MinIO)/NATS)
     services - 仅启动微服务 (需要基础设施已运行)
     logs     - 查看指定服务的日志
 .EXAMPLE
@@ -30,6 +32,9 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BackendDir = Split-Path -Parent $ScriptDir
+
+# Windows 平台检测（使用本地 PostgreSQL/Redis/RustFS/NATS，跳过 Docker）
+$IsWindows = $env:OS -eq "Windows_NT"
 
 # 服务端口映射
 $Services = @{
@@ -63,8 +68,15 @@ function Test-PortInUse {
     return ($null -ne $connections -and $connections.Count -gt 0)
 }
 
-# ========== Docker 基础设施 ==========
+# ========== 基础设施 ==========
 function Start-Infra {
+    if ($IsWindows) {
+        Write-Info "Windows 环境：使用本地 PostgreSQL/Redis/RustFS/NATS，跳过 Docker"
+        Write-Info "  确保本地服务已启动：PostgreSQL(:5432) Redis(:6379) RustFS(:9000) NATS(:4222)"
+        Write-Info "  配置来源: backend/.env"
+        return $true
+    }
+
     Write-Info "启动 Docker 基础设施..."
 
     # 检查 Docker 是否运行
@@ -125,6 +137,10 @@ function Start-Infra {
 }
 
 function Stop-Infra {
+    if ($IsWindows) {
+        Write-Info "Windows 环境：跳过 Docker 停止（本地服务需手动管理）"
+        return
+    }
     Write-Info "停止 Docker 基础设施..."
     docker compose stop postgres redis minio nats 2>&1 | Out-Null
     Write-OK "基础设施已停止"
@@ -236,18 +252,31 @@ function Show-Status {
     Write-Host "═══ Show Love 服务状态 ═══" -ForegroundColor Cyan
     Write-Host ""
 
-    # Docker 服务
-    Write-Host "▸ 基础设施 (Docker)" -ForegroundColor Yellow
-    $infraSvcs = @("postgres", "redis", "minio", "nats")
-    foreach ($svc in $infraSvcs) {
-        $status = docker compose ps --format json $svc 2>$null | ConvertFrom-Json -ErrorAction SilentlyContinue
-        if ($status) {
-            $health = $status.Health
-            $color = if ($health -eq "healthy") { "Green" } else { "Yellow" }
-            Write-Host "  $svc" -NoNewline
-            Write-Host " [$health]" -ForegroundColor $color
+    # 基础设施
+    if ($IsWindows) {
+        Write-Host "▸ 基础设施 (本地)" -ForegroundColor Yellow
+        $infraSvcs = @{
+            "PostgreSQL" = 5432
+            "Redis"      = 6379
+            "RustFS"     = 9000
+            "NATS"       = 4222
+        }
+    } else {
+        Write-Host "▸ 基础设施 (Docker)" -ForegroundColor Yellow
+        $infraSvcs = @{
+            "PostgreSQL" = 5432
+            "Redis"      = 6379
+            "MinIO"      = 9000
+            "NATS"       = 4222
+        }
+    }
+    foreach ($svc in $infraSvcs.Keys) {
+        $port = $infraSvcs[$svc]
+        if (Test-PortInUse $port) {
+            Write-Host "  $svc (:$port)" -NoNewline
+            Write-Host " [running]" -ForegroundColor Green
         } else {
-            Write-Host "  $svc" -NoNewline
+            Write-Host "  $svc (:$port)" -NoNewline
             Write-Host " [stopped]" -ForegroundColor Red
         }
     }
@@ -303,7 +332,7 @@ function Show-Logs {
     if (Test-Path $logFile) {
         Write-Info "查看 $Name 日志 (Ctrl+C 退出)..."
         Get-Content $logFile -Wait -Tail 50
-    } elseif ($Services[$Name].Type -eq "infra") {
+    } elseif ((-not $IsWindows) -and $Services[$Name].Type -eq "infra") {
         Write-Info "查看 Docker 日志..."
         docker compose logs -f --tail 50 $Name
     } else {
@@ -315,9 +344,13 @@ function Show-Logs {
 function Test-Health {
     Write-Info "检查所有服务健康状态..."
 
-    # Docker
-    Write-Info "Docker 服务:"
-    docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}" 2>$null
+    if (-not $IsWindows) {
+        # Docker
+        Write-Info "Docker 服务:"
+        docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Health}}" 2>$null
+    } else {
+        Write-Info "Windows 本地服务（PostgreSQL/Redis/RustFS/NATS）"
+    }
 
     # Gateway
     Write-Info "API 网关:"
@@ -354,7 +387,11 @@ switch ($Action) {
         Write-Host ""
         Write-Host "═══ 启动完成 ═══" -ForegroundColor Green
         Write-Host "  API 网关: http://localhost:8080"
-        Write-Host "  MinIO 控制台: http://localhost:9001 (minioadmin/minioadmin)"
+        if ($IsWindows) {
+            Write-Host "  存储: RustFS ($env:RUSTFS_ENDPOINT_URL)"
+        } else {
+            Write-Host "  MinIO 控制台: http://localhost:9001 (minioadmin/minioadmin)"
+        }
         Write-Host "  NATS 监控: http://localhost:8222"
         Write-Host "  日志目录: backend/logs/"
         Write-Host ""
@@ -385,7 +422,11 @@ switch ($Action) {
         Write-Host ""
         Start-Infra | Out-Null
         Write-Host ""
-        Write-Host "基础设施就绪: PostgreSQL(5432) Redis(6379) MinIO(9000) NATS(4222)" -ForegroundColor Green
+        if ($IsWindows) {
+            Write-Host "基础设施就绪: PostgreSQL(5432) Redis(6379) RustFS(9000) NATS(4222)" -ForegroundColor Green
+        } else {
+            Write-Host "基础设施就绪: PostgreSQL(5432) Redis(6379) MinIO(9000) NATS(4222)" -ForegroundColor Green
+        }
         Write-Host ""
     }
     "services" {
@@ -406,3 +447,4 @@ switch ($Action) {
 }
 
 Pop-Location
+
