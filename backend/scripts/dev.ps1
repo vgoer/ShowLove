@@ -184,6 +184,7 @@ function Start-AllServices {
 
     foreach ($svc in $startOrder) {
         if ($svc -eq "gateway") {
+            New-Item -ItemType Directory -Force -Path "$BackendDir\logs" | Out-Null
             $proc = Start-Process -FilePath "go" `
                 -ArgumentList "run ./gateway/cmd/" `
                 -WorkingDirectory $BackendDir `
