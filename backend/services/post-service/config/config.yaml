@@ -1,0 +1,17 @@
+# post-service 配置
+server:
+  grpc_port: 50052
+
+database:
+  dsn: "postgres://showlove:showlove123@localhost:5432/posts_db?sslmode=disable"
+
+storage:
+  provider: "${STORAGE_PROVIDER:-minio}"
+  minio:
+    endpoint: "${MINIO_ENDPOINT:-localhost:9000}"
+    access_key: "${MINIO_ACCESS_KEY:-minioadmin}"
+    secret_key: "${MINIO_SECRET_KEY:-minioadmin}"
+    bucket: "${MINIO_BUCKET:-showlove}"
+
+nats:
+  url: "${NATS_URL:-nats://localhost:4222}"
