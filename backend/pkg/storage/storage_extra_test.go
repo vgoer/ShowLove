@@ -66,14 +66,39 @@ func TestNewStorage_UnknownProvider(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown provider")
 }
 
-func TestNewStorage_RustFS(t *testing.T) {
-	cfg := &RustFSConfig{MasterURL: "localhost:9333", FilerURL: "localhost:8888"}
-	s, err := NewStorage(ProviderRustFS, nil, cfg)
-	require.NoError(t, err)
+func TestNewStorage_RustFS_Config(t *testing.T) {
+	cfg := &RustFSConfig{
+		Endpoint:  "192.168.77.100:9000",
+		AccessKey: "test-access-key",
+		SecretKey: "test-secret-key",
+		Region:    "us-east-1",
+		Bucket:    "packages",
+	}
+	// Creating storage will try to connect — skip if server is not available
+	s, err := NewRustFSStorage(*cfg)
+	if err != nil {
+		t.Skipf("RustFS server not available, skipping: %v", err)
+	}
 	assert.NotNil(t, s)
+}
 
-	// RustFS operations are placeholders
-	_, err = s.Upload(nil, "test", nil, UploadOptions{})
+func TestNewStorage_RustFS_NilConfig(t *testing.T) {
+	_, err := NewStorage(ProviderRustFS, nil, nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not yet implemented")
+	assert.Contains(t, err.Error(), "RustFS config is required")
+}
+
+func TestRustFSConfig_Fields(t *testing.T) {
+	cfg := RustFSConfig{
+		Endpoint:  "192.168.77.100:9000",
+		AccessKey: "Nf3voo8VNf09e8kdiYzy",
+		SecretKey: "EPdYQo3pLkJ2KDQXUlrN1m6n4ZIxg5lU5IH6KYB7",
+		Region:    "us-east-1",
+		Bucket:    "packages",
+		UseSSL:    false,
+	}
+	assert.Equal(t, "192.168.77.100:9000", cfg.Endpoint)
+	assert.Equal(t, "us-east-1", cfg.Region)
+	assert.Equal(t, "packages", cfg.Bucket)
+	assert.False(t, cfg.UseSSL)
 }
