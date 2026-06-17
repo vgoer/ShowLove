@@ -1,0 +1,4 @@
+server:
+  grpc_port: 50053
+database:
+  dsn: "postgres://showlove:showlove123@localhost:5432/comments_db?sslmode=disable"
