@@ -7,6 +7,8 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -26,8 +28,8 @@ import (
 // For CI, set DB_DSN to a test database.
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	// Use environment variable or skip
-	dsn := "postgres://showlove:showlove123@localhost:5432/users_db?sslmode=disable"
+	// Use environment variables, DSN, or skip
+	dsn := buildDSN("users_db")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Skipf("Skipping integration test: database not available: %v", err)
@@ -95,4 +97,19 @@ func TestIntegration_UserService_RefreshToken(t *testing.T) {
 	newToken, err := svc.RefreshAccessToken(ctx, result.RefreshToken)
 	require.NoError(t, err)
 	assert.NotEmpty(t, newToken)
+}
+
+func getEnv(k, d string) string {
+	if v := os.Getenv(k); v != "" { return v }
+	return d
+}
+
+func buildDSN(dbName string) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		getEnv("POSTGRES_USER", "user"),
+		getEnv("POSTGRES_PASSWORD", "password"),
+		getEnv("POSTGRES_HOST", "localhost"),
+		getEnv("POSTGRES_PORT", "5432"),
+		dbName,
+	)
 }

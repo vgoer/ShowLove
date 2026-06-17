@@ -3,7 +3,7 @@ server:
   grpc_port: 50051
 
 database:
-  dsn: "postgres://showlove:showlove123@localhost:5432/users_db?sslmode=disable"
+  dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/users_db?sslmode=disable"
   max_open_conns: 25
   max_idle_conns: 10
 

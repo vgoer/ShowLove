@@ -25,7 +25,7 @@ func main() {
 	log.Println("[user-service] Starting...")
 
 	// Configuration from environment
-	dbDSN := getEnv("DB_DSN", "postgres://showlove:showlove123@localhost:5432/users_db?sslmode=disable")
+	dbDSN := getEnv("DB_DSN", buildDSN("users_db"))
 	jwtSecret := getEnv("JWT_SECRET", "dev-secret-change-in-production")
 	grpcPort := getEnv("GRPC_PORT", "50051")
 
@@ -70,4 +70,13 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// buildDSN constructs a PostgreSQL DSN from individual env vars.
+func buildDSN(dbName string) string {
+	host := getEnv("POSTGRES_HOST", "localhost")
+	port := getEnv("POSTGRES_PORT", "5432")
+	user := getEnv("POSTGRES_USER", "user")
+	password := getEnv("POSTGRES_PASSWORD", "password")
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbName)
 }

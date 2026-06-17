@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -20,7 +21,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("[notification-service] Starting...")
 
-	dbDSN := getEnv("DB_DSN", "postgres://showlove:showlove123@localhost:5432/notifications_db?sslmode=disable")
+	dbDSN := getEnv("DB_DSN", buildDSN("notifications_db"))
 	db, err := gorm.Open(postgres.Open(dbDSN), &gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
 	if err != nil {
 		log.Fatalf("[notification-service] DB: %v", err)
@@ -43,4 +44,14 @@ func main() {
 func getEnv(k, d string) string {
 	if v := os.Getenv(k); v != "" { return v }
 	return d
+}
+
+func buildDSN(dbName string) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		getEnv("POSTGRES_USER", "user"),
+		getEnv("POSTGRES_PASSWORD", "password"),
+		getEnv("POSTGRES_HOST", "localhost"),
+		getEnv("POSTGRES_PORT", "5432"),
+		dbName,
+	)
 }

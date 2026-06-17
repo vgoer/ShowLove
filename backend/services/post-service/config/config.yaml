@@ -3,7 +3,7 @@ server:
   grpc_port: 50052
 
 database:
-  dsn: "postgres://showlove:showlove123@localhost:5432/posts_db?sslmode=disable"
+  dsn: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/posts_db?sslmode=disable"
 
 storage:
   provider: "${STORAGE_PROVIDER:-minio}"

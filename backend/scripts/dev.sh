@@ -89,9 +89,9 @@ start_infra() {
     info "检查数据库..."
     local dbs=("users_db" "posts_db" "comments_db" "moods_db" "quotes_db" "notifications_db")
     for db in "${dbs[@]}"; do
-        if ! docker exec showlove-postgres psql -U showlove -lqt 2>/dev/null | grep -q "$db"; then
+        if ! docker exec showlove-postgres psql -U "${POSTGRES_USER:-user}" -lqt 2>/dev/null | grep -q "$db"; then
             info "创建数据库: $db"
-            docker exec showlove-postgres psql -U showlove -c "CREATE DATABASE $db" 2>/dev/null || true
+            docker exec showlove-postgres psql -U "${POSTGRES_USER:-user}" -c "CREATE DATABASE $db" 2>/dev/null || true
         fi
     done
     ok "数据库检查完成"

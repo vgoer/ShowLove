@@ -109,12 +109,14 @@ function Start-Infra {
 
     # 初始化数据库（如果 init-multi-db.sh 未自动执行）
     Write-Info "检查数据库..."
+    $pgUser = $env:POSTGRES_USER
+    if (-not $pgUser) { $pgUser = "user" }
     $dbs = @("users_db", "posts_db", "comments_db", "moods_db", "quotes_db", "notifications_db")
     foreach ($db in $dbs) {
-        $result = docker exec showlove-postgres psql -U showlove -lqt 2>$null | Select-String $db
+        $result = docker exec showlove-postgres psql -U $pgUser -lqt 2>$null | Select-String $db
         if (-not $result) {
             Write-Info "创建数据库: $db"
-            docker exec showlove-postgres psql -U showlove -c "CREATE DATABASE $db" 2>$null | Out-Null
+            docker exec showlove-postgres psql -U $pgUser -c "CREATE DATABASE $db" 2>$null | Out-Null
         }
     }
     Write-OK "数据库检查完成"

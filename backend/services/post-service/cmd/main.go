@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -23,7 +24,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("[post-service] Starting...")
 
-	dbDSN := getEnv("DB_DSN", "postgres://showlove:showlove123@localhost:5432/posts_db?sslmode=disable")
+	dbDSN := getEnv("DB_DSN", buildDSN("posts_db"))
 	grpcPort := getEnv("GRPC_PORT", "50052")
 
 	// Database
@@ -69,4 +70,14 @@ func getEnv(key, defaultValue string) string {
 		return v
 	}
 	return defaultValue
+}
+
+func buildDSN(dbName string) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		getEnv("POSTGRES_USER", "user"),
+		getEnv("POSTGRES_PASSWORD", "password"),
+		getEnv("POSTGRES_HOST", "localhost"),
+		getEnv("POSTGRES_PORT", "5432"),
+		dbName,
+	)
 }

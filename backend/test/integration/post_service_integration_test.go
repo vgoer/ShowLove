@@ -5,6 +5,8 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"testing"
 
 	"showlove/pkg/events"
@@ -21,7 +23,7 @@ import (
 
 func setupPostDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	dsn := "postgres://showlove:showlove123@localhost:5432/posts_db?sslmode=disable"
+	dsn := buildDSN("posts_db")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		t.Skipf("Skipping integration test: database not available: %v", err)
@@ -77,4 +79,19 @@ func TestIntegration_PostService_SensitiveContentRejected(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, service.ErrSensitiveContent)
+}
+
+func getEnv(k, d string) string {
+	if v := os.Getenv(k); v != "" { return v }
+	return d
+}
+
+func buildDSN(dbName string) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		getEnv("POSTGRES_USER", "user"),
+		getEnv("POSTGRES_PASSWORD", "password"),
+		getEnv("POSTGRES_HOST", "localhost"),
+		getEnv("POSTGRES_PORT", "5432"),
+		dbName,
+	)
 }
