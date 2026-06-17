@@ -97,7 +97,32 @@ migrate-up: ## 运行所有服务的数据库迁移
 migrate-down: ## 回滚所有迁移
 	@echo "回滚数据库迁移..."
 
+# ========== 开发环境 ==========
+dev: ## 一键启动开发环境（基础设施 + 全部微服务）
+	@bash scripts/dev.sh start
+
+dev-infra: ## 仅启动基础设施（DB/Redis/MinIO/NATS）
+	@bash scripts/dev.sh infra
+
+dev-services: ## 仅启动微服务
+	@bash scripts/dev.sh services
+
+dev-stop: ## 停止开发环境
+	@bash scripts/dev.sh stop
+
+dev-restart: ## 重启开发环境
+	@bash scripts/dev.sh restart
+
+dev-status: ## 查看服务状态
+	@bash scripts/dev.sh status
+
+dev-health: ## 健康检查
+	@bash scripts/dev.sh health
+
+dev-logs: ## 查看网关日志（make dev-logs SVC=user-service）
+	@bash scripts/dev.sh logs $(or $(SVC),gateway)
+
 # ========== 清理 ==========
 clean: ## 清理构建产物
-	@rm -rf bin/
+	@rm -rf bin/ logs/
 	@echo "清理完成"
