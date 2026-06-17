@@ -1,0 +1,84 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: showlove
+          POSTGRES_PASSWORD: showlove123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+
+      - name: Lint
+        working-directory: backend
+        run: |
+          go vet ./gateway/... ./pkg/... ./services/...
+
+      - name: Unit Tests
+        working-directory: backend
+        run: |
+          go test ./pkg/... ./gateway/... -v -count=1
+
+      - name: Service Tests
+        working-directory: backend
+        run: |
+          for svc in user-service post-service comment-service mood-service quote-service ai-service notification-service; do
+            echo "Testing $svc..."
+            go test ./services/$svc/... -v -count=1 || exit 1
+          done
+
+      - name: Build All
+        working-directory: backend
+        run: |
+          go build ./gateway/...
+          for svc in user-service post-service comment-service mood-service quote-service ai-service notification-service; do
+            go build ./services/$svc/...
+          done

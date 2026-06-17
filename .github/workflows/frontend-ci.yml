@@ -1,0 +1,52 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  analyze-and-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27'
+          channel: 'stable'
+
+      - name: Cache Flutter
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            frontend/.dart_tool
+            frontend/build
+          key: ${{ runner.os }}-flutter-${{ hashFiles('frontend/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-flutter-
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: flutter pub get
+
+      - name: Static Analysis
+        working-directory: frontend
+        run: flutter analyze
+
+      - name: Format Check
+        working-directory: frontend
+        run: dart format --set-exit-if-changed lib/ test/
+
+      - name: Run Tests
+        working-directory: frontend
+        run: flutter test --coverage
