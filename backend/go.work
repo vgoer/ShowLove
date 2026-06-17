@@ -16,4 +16,5 @@ use (
 	./services/quote-service
 	./services/user-service
 	./test/e2e
+	./test/integration
 )
