@@ -160,7 +160,7 @@ function Start-AppService {
 
     Write-Info "启动 $Name (:$port)..."
 
-    $logFile = Join-Path $BackendDir "logs" "$Name.log"
+    $logFile = Join-Path $BackendDir "logs\$Name.log"
     New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
 
     $proc = Start-Process -FilePath "go" `
@@ -328,7 +328,7 @@ function Show-Logs {
         return
     }
 
-    $logFile = Join-Path $BackendDir "logs" "$Name.log"
+    $logFile = Join-Path $BackendDir "logs\$Name.log"
     if (Test-Path $logFile) {
         Write-Info "查看 $Name 日志 (Ctrl+C 退出)..."
         Get-Content $logFile -Wait -Tail 50
