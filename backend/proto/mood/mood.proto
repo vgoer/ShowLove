@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package mood;
+
+option go_package = "showlove/proto/mood;moodpb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message MoodEntry {
+  string id = 1;
+  string user_id = 2;
+  int32 mood_level = 3;  // 1-10
+  string mood_label = 4; // 开心, 平静, 难过, 焦虑 ...
+  string note = 5;
+  string created_at = 6;  // date string YYYY-MM-DD
+}
+
+message WeeklyMood {
+  string start_date = 1;
+  string end_date = 2;
+  repeated MoodPoint points = 3;
+}
+
+message MoodPoint {
+  string date = 1;     // YYYY-MM-DD
+  int32 mood_level = 2; // 1-10, 0 means no entry
+  string mood_label = 3;
+}
+
+// ========== Requests & Responses ==========
+
+message RecordMoodRequest {
+  string user_id = 1;
+  int32 mood_level = 2;
+  string mood_label = 3;
+  string note = 4;
+}
+
+message RecordMoodResponse {
+  MoodEntry entry = 1;
+}
+
+message GetMoodsRequest {
+  string user_id = 1;
+  string from = 2;  // YYYY-MM-DD
+  string to = 3;    // YYYY-MM-DD
+}
+
+message GetMoodsResponse {
+  repeated MoodEntry entries = 1;
+}
+
+message GetWeeklyMoodRequest {
+  string user_id = 1;
+}
+
+message GetWeeklyMoodResponse {
+  WeeklyMood weekly_mood = 1;
+}
+
+// ========== Service ==========
+
+service MoodService {
+  rpc RecordMood(RecordMoodRequest) returns (RecordMoodResponse);
+  rpc GetMoods(GetMoodsRequest) returns (GetMoodsResponse);
+  rpc GetWeeklyMood(GetWeeklyMoodRequest) returns (GetWeeklyMoodResponse);
+}

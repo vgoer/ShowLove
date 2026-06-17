@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "showlove/proto/ai;aipb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message AIReply {
+  string post_id = 1;
+  string content = 2;
+  string provider = 3;  // openai, deepseek, qwen, ollama
+}
+
+// ========== Requests & Responses ==========
+
+message GenerateReplyRequest {
+  string post_id = 1;
+  string post_content = 2;
+  string mood_tag = 3;
+  string author_nickname = 4;
+}
+
+message GenerateReplyResponse {
+  string content = 1;
+  string provider = 2;
+}
+
+// ========== Service ==========
+
+// Internal gRPC service for AI reply generation.
+// Primarily consumed via NATS events, but also exposed for direct calls.
+service AIService {
+  rpc GenerateReply(GenerateReplyRequest) returns (GenerateReplyResponse);
+}

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package comment;
+
+option go_package = "showlove/proto/comment;commentpb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message Comment {
+  string id = 1;
+  string post_id = 2;
+  string author_id = 3;
+  string author_nickname = 4;
+  string author_avatar = 5;
+  string content = 6;
+  bool is_ai_generated = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// ========== Requests & Responses ==========
+
+message CreateCommentRequest {
+  string post_id = 1;
+  string author_id = 2;
+  string author_nickname = 3;
+  string author_avatar = 4;
+  string content = 5;
+  bool is_ai_generated = 6;
+}
+
+message CreateCommentResponse {
+  Comment comment = 1;
+}
+
+message ListCommentsRequest {
+  string post_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+}
+
+message DeleteCommentRequest {
+  string comment_id = 1;
+  string user_id = 2;  // for authorization
+}
+
+message DeleteCommentResponse {}
+
+// ========== Service ==========
+
+service CommentService {
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse);
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+}

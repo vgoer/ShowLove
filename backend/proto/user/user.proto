@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "showlove/proto/user;userpb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message User {
+  string id = 1;
+  string email = 2;
+  string nickname = 3;
+  string avatar_url = 4;
+  string bio = 5;
+  int32 kindness_score = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message AuthTokens {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;  // access token TTL in seconds
+}
+
+// ========== Requests & Responses ==========
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string nickname = 3;
+}
+
+message RegisterResponse {
+  User user = 1;
+  AuthTokens tokens = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  User user = 1;
+  AuthTokens tokens = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  int64 expires_in = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message UpdateProfileRequest {
+  string user_id = 1;
+  optional string nickname = 2;
+  optional string bio = 3;
+}
+
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+message UploadAvatarRequest {
+  string user_id = 1;
+  bytes image_data = 2;
+  string content_type = 3;
+}
+
+message UploadAvatarResponse {
+  string avatar_url = 1;
+}
+
+// ========== Service ==========
+
+service UserService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc UploadAvatar(UploadAvatarRequest) returns (UploadAvatarResponse);
+}

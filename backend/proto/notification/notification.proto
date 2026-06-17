@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "showlove/proto/notification;notifpb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message DeviceToken {
+  string id = 1;
+  string user_id = 2;
+  string token = 3;
+  string platform = 4;  // ios, android, web
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message PushNotification {
+  string title = 1;
+  string body = 2;
+  string user_id = 3;
+  map<string, string> data = 4;
+}
+
+// ========== Requests & Responses ==========
+
+message RegisterDeviceRequest {
+  string user_id = 1;
+  string token = 2;
+  string platform = 3;  // ios, android, web
+}
+
+message RegisterDeviceResponse {
+  DeviceToken device_token = 1;
+}
+
+message SendPushRequest {
+  string user_id = 1;
+  string title = 2;
+  string body = 3;
+  map<string, string> data = 4;
+}
+
+message SendPushResponse {}
+
+// ========== Service ==========
+
+service NotificationService {
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
+  rpc SendPush(SendPushRequest) returns (SendPushResponse);
+}

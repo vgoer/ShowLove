@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package quote;
+
+option go_package = "showlove/proto/quote;quotepb";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+// ========== Models ==========
+
+message DailyQuote {
+  string id = 1;
+  string text_zh = 2;
+  string text_en = 3;
+  string author = 4;
+  string background_url = 5;
+  string scheduled_date = 6;  // YYYY-MM-DD
+  bool pushed = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// ========== Requests & Responses ==========
+
+message GetTodayQuoteRequest {}
+
+message GetTodayQuoteResponse {
+  DailyQuote quote = 1;
+}
+
+message CreateQuoteRequest {
+  string text_zh = 1;
+  string text_en = 2;
+  string author = 3;
+  string background_url = 4;
+  string scheduled_date = 5;  // YYYY-MM-DD
+}
+
+message CreateQuoteResponse {
+  DailyQuote quote = 1;
+}
+
+message ListQuotesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListQuotesResponse {
+  repeated DailyQuote quotes = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+}
+
+// ========== Service ==========
+
+service QuoteService {
+  rpc GetTodayQuote(GetTodayQuoteRequest) returns (GetTodayQuoteResponse);
+  rpc CreateQuote(CreateQuoteRequest) returns (CreateQuoteResponse);
+  rpc ListQuotes(ListQuotesRequest) returns (ListQuotesResponse);
+}
