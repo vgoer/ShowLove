@@ -1,0 +1,17 @@
+# user-service 配置
+server:
+  grpc_port: 50051
+
+database:
+  dsn: "postgres://showlove:showlove123@localhost:5432/users_db?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 10
+
+jwt:
+  secret: "${JWT_SECRET}"
+  access_token_ttl: 15m
+  refresh_token_ttl: 168h  # 7 days
+
+redis:
+  addr: "localhost:6379"
+  password: ""
