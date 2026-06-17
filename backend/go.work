@@ -1,0 +1,18 @@
+go 1.22
+
+use (
+	./gateway
+	./pkg/errcode
+	./pkg/events
+	./pkg/jwt
+	./pkg/pagination
+	./pkg/storage
+	./pkg/validator
+	./services/ai-service
+	./services/comment-service
+	./services/mood-service
+	./services/notification-service
+	./services/post-service
+	./services/quote-service
+	./services/user-service
+)

@@ -1,0 +1,29 @@
+# Build output
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.pem
+service-account.json
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Dependencies (if vendored)
+vendor/
