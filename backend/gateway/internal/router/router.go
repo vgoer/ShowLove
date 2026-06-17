@@ -26,6 +26,8 @@ func Setup(jwtMgr *jwt.Manager) *gin.Engine {
 	userH := handler.NewUserHandler()
 	healthH := handler.NewHealthHandler()
 	uploadH := handler.NewUploadHandler()
+	postH := handler.NewPostHandler()
+	commentH := handler.NewCommentHandler()
 
 	// Health check (no auth)
 	r.GET("/api/v1/health", healthH.Health)
@@ -46,6 +48,19 @@ func Setup(jwtMgr *jwt.Manager) *gin.Engine {
 		api.GET("/users/me", userH.GetMe)
 		api.PUT("/users/me", userH.UpdateMe)
 		api.PUT("/users/me/avatar", userH.UploadAvatar)
+
+		// Posts
+		api.GET("/posts", postH.ListPosts)
+		api.POST("/posts", postH.CreatePost)
+		api.GET("/posts/:id", postH.GetPost)
+		api.DELETE("/posts/:id", postH.DeletePost)
+		api.POST("/posts/:id/stickers", postH.SendSticker)
+		api.POST("/posts/:id/report", postH.ReportPost)
+
+		// Comments
+		api.GET("/posts/:id/comments", commentH.ListComments)
+		api.POST("/posts/:id/comments", commentH.CreateComment)
+		api.DELETE("/comments/:id", commentH.DeleteComment)
 
 		// Upload
 		api.POST("/upload/image", uploadH.UploadImage)
