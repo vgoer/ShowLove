@@ -1,0 +1,218 @@
+version: "3.9"
+
+# =============================================================================
+# Show Love - 生产环境 Docker Compose
+# 微服务完整编排
+# =============================================================================
+
+services:
+  # ========== 基础设施 ==========
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: showlove-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-showlove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-multi-db.sh:/docker-entrypoint-initdb.d/init.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-showlove}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - showlove-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: showlove-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - showlove-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: showlove-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    networks:
+      - showlove-net
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: showlove-nats
+    command: -js
+    healthcheck:
+      test: ["CMD", "nats", "server", "check", "connection"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+    networks:
+      - showlove-net
+
+  # ========== API 网关 ==========
+  gateway:
+    build: ./gateway
+    container_name: showlove-gateway
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - user-service
+      - post-service
+      - comment-service
+      - mood-service
+      - quote-service
+      - ai-service
+      - notification-service
+    environment:
+      GIN_MODE: release
+      JWT_SECRET: ${JWT_SECRET}
+      USER_SVC_ADDR: user-service:50051
+      POST_SVC_ADDR: post-service:50052
+      COMMENT_SVC_ADDR: comment-service:50053
+      MOOD_SVC_ADDR: mood-service:50054
+      QUOTE_SVC_ADDR: quote-service:50055
+      AI_SVC_ADDR: ai-service:50056
+      NOTIFICATION_SVC_ADDR: notification-service:50057
+    restart: always
+    networks:
+      - showlove-net
+
+  # ========== 微服务 ==========
+  user-service:
+    build: ./services/user-service
+    container_name: showlove-user-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/users_db?sslmode=disable
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    restart: always
+    networks:
+      - showlove-net
+
+  post-service:
+    build: ./services/post-service
+    container_name: showlove-post-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/posts_db?sslmode=disable
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-showlove}
+      NATS_URL: nats://nats:4222
+    restart: always
+    networks:
+      - showlove-net
+
+  comment-service:
+    build: ./services/comment-service
+    container_name: showlove-comment-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/comments_db?sslmode=disable
+    restart: always
+    networks:
+      - showlove-net
+
+  mood-service:
+    build: ./services/mood-service
+    container_name: showlove-mood-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/moods_db?sslmode=disable
+    restart: always
+    networks:
+      - showlove-net
+
+  quote-service:
+    build: ./services/quote-service
+    container_name: showlove-quote-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/quotes_db?sslmode=disable
+      NATS_URL: nats://nats:4222
+    restart: always
+    networks:
+      - showlove-net
+
+  ai-service:
+    build: ./services/ai-service
+    container_name: showlove-ai-service
+    depends_on:
+      - nats
+    environment:
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      QWEN_API_KEY: ${QWEN_API_KEY}
+      NATS_URL: nats://nats:4222
+      COMMENT_SVC_ADDR: comment-service:50053
+    restart: always
+    networks:
+      - showlove-net
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: showlove-notification-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://${POSTGRES_USER:-showlove}:${POSTGRES_PASSWORD}@postgres:5432/notifications_db?sslmode=disable
+      NATS_URL: nats://nats:4222
+    restart: always
+    networks:
+      - showlove-net
+
+volumes:
+  pgdata:
+    name: showlove_pgdata_prod
+  redisdata:
+    name: showlove_redisdata_prod
+  miniodata:
+    name: showlove_miniodata_prod
+
+networks:
+  showlove-net:
+    driver: bridge
