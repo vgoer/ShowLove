@@ -28,6 +28,9 @@ func Setup(jwtMgr *jwt.Manager) *gin.Engine {
 	uploadH := handler.NewUploadHandler()
 	postH := handler.NewPostHandler()
 	commentH := handler.NewCommentHandler()
+	moodH := handler.NewMoodHandler()
+	quoteH := handler.NewQuoteHandler()
+	deviceH := handler.NewDeviceHandler()
 
 	// Health check (no auth)
 	r.GET("/api/v1/health", healthH.Health)
@@ -61,6 +64,17 @@ func Setup(jwtMgr *jwt.Manager) *gin.Engine {
 		api.GET("/posts/:id/comments", commentH.ListComments)
 		api.POST("/posts/:id/comments", commentH.CreateComment)
 		api.DELETE("/comments/:id", commentH.DeleteComment)
+
+		// Mood
+		api.GET("/moods", moodH.GetMoods)
+		api.POST("/moods", moodH.RecordMood)
+		api.GET("/moods/weekly", moodH.GetWeeklyMood)
+
+		// Daily Quote
+		api.GET("/quotes/today", quoteH.GetTodayQuote)
+
+		// Device
+		api.POST("/devices", deviceH.RegisterDevice)
 
 		// Upload
 		api.POST("/upload/image", uploadH.UploadImage)
