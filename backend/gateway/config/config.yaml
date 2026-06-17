@@ -1,0 +1,23 @@
+# gateway 配置
+server:
+  port: 8080
+  mode: debug  # debug / release / test
+
+jwt:
+  secret: "${JWT_SECRET}"
+  access_token_ttl: 15m
+  refresh_token_ttl: 168h
+
+rate_limit:
+  requests_per_second: 100
+  burst: 100
+
+# 下游 gRPC 服务地址
+services:
+  user_service: "localhost:50051"
+  post_service: "localhost:50052"
+  comment_service: "localhost:50053"
+  mood_service: "localhost:50054"
+  quote_service: "localhost:50055"
+  ai_service: "localhost:50056"
+  notification_service: "localhost:50057"
