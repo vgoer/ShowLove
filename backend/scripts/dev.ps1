@@ -168,7 +168,8 @@ function Start-AppService {
 
     # go build 显式命名避免 cmd.exe 触发 Windows 安全策略
     $bin = Join-Path $binDir "$Name.exe"
-    & go build -o $bin ./cmd/ 2>&1 | Out-File $errFile -Encoding utf8
+    $srcDir = $Dir  # e.g. services/user-service
+    & go build -o $bin "./$srcDir/cmd/" 2>&1 | Out-File $errFile -Encoding utf8
     if ($LASTEXITCODE -ne 0) {
         Write-ErrorMsg "$Name 编译失败，查看 $errFile"
         return
