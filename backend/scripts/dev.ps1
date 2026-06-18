@@ -411,6 +411,29 @@ switch ($Action) {
             if ($missing.Count -gt 0) {
                 Write-Warn "以下服务未启动: $($missing -join ', ')"
                 Write-Warn "微服务可能因连接失败而崩溃，请先启动后再试"
+                Write-Host ""
+
+                # 自动检测安装路径
+                Write-Host "  检测安装状态:" -ForegroundColor DarkGray
+                $pgCheck = Get-Command psql 2>$null
+                if ($pgCheck) { Write-Host "    PostgreSQL: 已安装 ($($pgCheck.Source))" -ForegroundColor Green }
+                else { Write-Host "    PostgreSQL: 未找到 psql 命令" -ForegroundColor DarkGray }
+
+                $redisCheck = Get-Command redis-cli 2>$null
+                if ($redisCheck) { Write-Host "    Redis: 已安装 ($($redisCheck.Source))" -ForegroundColor Green }
+                else { Write-Host "    Redis: 未找到 redis-cli 命令" -ForegroundColor DarkGray }
+
+                $natsCheck = Get-Command nats-server 2>$null
+                if ($natsCheck) { Write-Host "    NATS: 已安装 ($($natsCheck.Source))" -ForegroundColor Green }
+                else { Write-Host "    NATS: 未找到 nats-server 命令" -ForegroundColor DarkGray }
+
+                Write-Host ""
+                $skip = Read-Host "  是否跳过并仅启动微服务？(y/N)"
+                if ($skip -ne 'y') {
+                    Write-Info "已取消，请启动缺失服务后重试"
+                    return
+                }
+                Write-Info "跳过预检，继续启动微服务..."
             }
         }
 
