@@ -163,11 +163,11 @@ function Start-AppService {
     $logFile = Join-Path $BackendDir "logs\$Name.log"
     New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
 
-    $proc = Start-Process -FilePath "go" `
-        -ArgumentList "run ./cmd/" `
+    # 通过 cmd /c 合并 stdout+stderr 到同一日志（Start-Process 不允许 stdout/stderr 同文件）
+    $proc = Start-Process -FilePath "cmd.exe" `
+        -ArgumentList "/c go run ./cmd/ 2>&1" `
         -WorkingDirectory (Join-Path $BackendDir $Dir) `
         -RedirectStandardOutput $logFile `
-        -RedirectStandardError $logFile `
         -NoNewWindow `
         -PassThru
 
@@ -185,11 +185,10 @@ function Start-AllServices {
     foreach ($svc in $startOrder) {
         if ($svc -eq "gateway") {
             New-Item -ItemType Directory -Force -Path "$BackendDir\logs" | Out-Null
-            $proc = Start-Process -FilePath "go" `
-                -ArgumentList "run ./gateway/cmd/" `
+            $proc = Start-Process -FilePath "cmd.exe" `
+                -ArgumentList "/c go run ./gateway/cmd/ 2>&1" `
                 -WorkingDirectory $BackendDir `
                 -RedirectStandardOutput "$BackendDir\logs\gateway.log" `
-                -RedirectStandardError "$BackendDir\logs\gateway.log" `
                 -NoNewWindow `
                 -PassThru
             $RunningServices["gateway"] = $proc
