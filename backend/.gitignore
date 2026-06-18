@@ -7,6 +7,10 @@ build/
 *.so
 *.dylib
 
+# Runtime logs
+logs/
+*.log
+
 # IDE
 .idea/
 .vscode/
