@@ -1,0 +1,8 @@
+2026/06/18 10:26:31 main.go:17: [ai-service] Starting...
+2026/06/18 10:26:31 main.go:44: [ai-service] Provider: openai, waiting for events...
+fatal error: all goroutines are asleep - deadlock!
+
+goroutine 1 [select (no cases)]:
+main.main()
+	E:/minio/test/ShowLove/backend/services/ai-service/cmd/main.go:45 +0x4ce
+exit status 2

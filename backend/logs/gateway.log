@@ -1,0 +1,35 @@
+2026/06/18 10:26:34 main.go:15: [gateway] Starting...
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/v1/health            --> showlove/gateway/internal/handler.(*HealthHandler).Health-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/register     --> showlove/gateway/internal/handler.(*AuthHandler).Register-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/login        --> showlove/gateway/internal/handler.(*AuthHandler).Login-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/refresh      --> showlove/gateway/internal/handler.(*AuthHandler).Refresh-fm (4 handlers)
+[GIN-debug] GET    /api/v1/users/me          --> showlove/gateway/internal/handler.(*UserHandler).GetMe-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/users/me          --> showlove/gateway/internal/handler.(*UserHandler).UpdateMe-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/users/me/avatar   --> showlove/gateway/internal/handler.(*UserHandler).UploadAvatar-fm (5 handlers)
+[GIN-debug] GET    /api/v1/posts             --> showlove/gateway/internal/handler.(*PostHandler).ListPosts-fm (5 handlers)
+[GIN-debug] POST   /api/v1/posts             --> showlove/gateway/internal/handler.(*PostHandler).CreatePost-fm (5 handlers)
+[GIN-debug] GET    /api/v1/posts/:id         --> showlove/gateway/internal/handler.(*PostHandler).GetPost-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/posts/:id         --> showlove/gateway/internal/handler.(*PostHandler).DeletePost-fm (5 handlers)
+[GIN-debug] POST   /api/v1/posts/:id/stickers --> showlove/gateway/internal/handler.(*PostHandler).SendSticker-fm (5 handlers)
+[GIN-debug] POST   /api/v1/posts/:id/report  --> showlove/gateway/internal/handler.(*PostHandler).ReportPost-fm (5 handlers)
+[GIN-debug] GET    /api/v1/posts/:id/comments --> showlove/gateway/internal/handler.(*CommentHandler).ListComments-fm (5 handlers)
+[GIN-debug] POST   /api/v1/posts/:id/comments --> showlove/gateway/internal/handler.(*CommentHandler).CreateComment-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/comments/:id      --> showlove/gateway/internal/handler.(*CommentHandler).DeleteComment-fm (5 handlers)
+[GIN-debug] GET    /api/v1/moods             --> showlove/gateway/internal/handler.(*MoodHandler).GetMoods-fm (5 handlers)
+[GIN-debug] POST   /api/v1/moods             --> showlove/gateway/internal/handler.(*MoodHandler).RecordMood-fm (5 handlers)
+[GIN-debug] GET    /api/v1/moods/weekly      --> showlove/gateway/internal/handler.(*MoodHandler).GetWeeklyMood-fm (5 handlers)
+[GIN-debug] GET    /api/v1/quotes/today      --> showlove/gateway/internal/handler.(*QuoteHandler).GetTodayQuote-fm (5 handlers)
+[GIN-debug] POST   /api/v1/devices           --> showlove/gateway/internal/handler.(*DeviceHandler).RegisterDevice-fm (5 handlers)
+[GIN-debug] POST   /api/v1/upload/image      --> showlove/gateway/internal/handler.(*UploadHandler).UploadImage-fm (5 handlers)
+2026/06/18 10:26:34 main.go:27: [gateway] HTTP server listening on :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+2026/06/18 10:26:36 logging.go:36: [gateway] a8d497a3 | GET /api/v1/health | 200 | 0s | 127.0.0.1
+2026/06/18 10:27:21 logging.go:36: [gateway] f47159da | GET /api/v1/health | 200 | 0s | 127.0.0.1
+2026/06/18 10:27:35 logging.go:36: [gateway] 1b238cf1 | GET / | 404 | 0s | 127.0.0.1
+2026/06/18 10:28:09 logging.go:36: [gateway] 6367a6e2 | GET /api/v1/health | 200 | 0s | 127.0.0.1

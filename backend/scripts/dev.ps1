@@ -161,13 +161,22 @@ function Start-AppService {
     Write-Info "启动 $Name (:$port)..."
 
     $logFile = Join-Path $BackendDir "logs\$Name.log"
+    $errFile = Join-Path $BackendDir "logs\$Name.err.log"
+    $binDir = Join-Path $BackendDir "build"
     New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
+    New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 
-    # 通过 cmd /c 合并 stdout+stderr 到同一日志（Start-Process 不允许 stdout/stderr 同文件）
-    $proc = Start-Process -FilePath "cmd.exe" `
-        -ArgumentList "/c go run ./cmd/ 2>&1" `
-        -WorkingDirectory (Join-Path $BackendDir $Dir) `
+    # go build 显式命名避免 cmd.exe 触发 Windows 安全策略
+    $bin = Join-Path $binDir "$Name.exe"
+    & go build -o $bin ./cmd/ 2>&1 | Out-File $errFile -Encoding utf8
+    if ($LASTEXITCODE -ne 0) {
+        Write-ErrorMsg "$Name 编译失败，查看 $errFile"
+        return
+    }
+
+    $proc = Start-Process -FilePath $bin `
         -RedirectStandardOutput $logFile `
+        -RedirectStandardError $errFile `
         -NoNewWindow `
         -PassThru
 
@@ -185,10 +194,18 @@ function Start-AllServices {
     foreach ($svc in $startOrder) {
         if ($svc -eq "gateway") {
             New-Item -ItemType Directory -Force -Path "$BackendDir\logs" | Out-Null
-            $proc = Start-Process -FilePath "cmd.exe" `
-                -ArgumentList "/c go run ./gateway/cmd/ 2>&1" `
-                -WorkingDirectory $BackendDir `
+            New-Item -ItemType Directory -Force -Path "$BackendDir\build" | Out-Null
+
+            # go build 显式命名避免 cmd.exe 触发 Windows 安全策略
+            & go build -o "$BackendDir\build\gateway.exe" ./gateway/cmd/ 2>&1 | Out-File "$BackendDir\logs\gateway.err.log" -Encoding utf8
+            if ($LASTEXITCODE -ne 0) {
+                Write-ErrorMsg "gateway 编译失败，查看 logs/gateway.err.log"
+                continue
+            }
+
+            $proc = Start-Process -FilePath "$BackendDir\build\gateway.exe" `
                 -RedirectStandardOutput "$BackendDir\logs\gateway.log" `
+                -RedirectStandardError "$BackendDir\logs\gateway.err.log" `
                 -NoNewWindow `
                 -PassThru
             $RunningServices["gateway"] = $proc
@@ -380,9 +397,37 @@ switch ($Action) {
         Write-Host "🌸 显出爱心 - 开发环境启动" -ForegroundColor Magenta
         Write-Host ""
 
-        if (Start-Infra) {
-            Start-AllServices
+        if (-not (Start-Infra)) {
+            Write-ErrorMsg "基础设施启动失败，退出"
+            return
         }
+
+        if ($IsWindows) {
+            Write-Host ""
+            Write-Info "检查本地服务端口..."
+            $requiredPorts = @{
+                "PostgreSQL" = 5432
+                "Redis"      = 6379
+                "RustFS"     = 9000
+                "NATS"       = 4222
+            }
+            $missing = @()
+            foreach ($svc in $requiredPorts.Keys) {
+                $port = $requiredPorts[$svc]
+                if (Test-PortInUse $port) {
+                    Write-OK "$svc (:$port) 已就绪"
+                } else {
+                    Write-Warn "$svc (:$port) 未启动！"
+                    $missing += $svc
+                }
+            }
+            if ($missing.Count -gt 0) {
+                Write-Warn "以下服务未启动: $($missing -join ', ')"
+                Write-Warn "微服务可能因连接失败而崩溃，请先启动后再试"
+            }
+        }
+
+        Start-AllServices
 
         Write-Host ""
         Write-Host "═══ 启动完成 ═══" -ForegroundColor Green

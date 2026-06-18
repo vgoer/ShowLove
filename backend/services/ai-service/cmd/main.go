@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"showlove/pkg/events"
@@ -41,8 +43,15 @@ func main() {
 	grpcServer := grpc.NewServer()
 	reflection.Register(grpcServer)
 
-	log.Printf("[ai-service] Provider: %s, waiting for events...", activeProvider)
-	select {} // Block forever, processing NATS events
+	port := getEnv("GRPC_PORT", "50056")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		log.Fatalf("[ai-service] Failed to listen on :%s: %v", port, err)
+	}
+	log.Printf("[ai-service] Provider: %s, gRPC on :%s", activeProvider, port)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("[ai-service] gRPC server failed: %v", err)
+	}
 }
 
 func getEnv(key, def string) string {

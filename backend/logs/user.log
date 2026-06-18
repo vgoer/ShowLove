@@ -1,0 +1,10 @@
+2026/06/18 10:26:27 main.go:25: [user-service] Starting...
+
+2026/06/18 10:26:27 [35mE:/minio/test/ShowLove/backend/services/user-service/cmd/main.go:33
+[0m[31m[error] [0mfailed to initialize database, got error failed to connect to `user=user database=users_db`:
+	[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connectex: An attempt was made to access a socket in a way forbidden by its access permissions.
+	127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.
+2026/06/18 10:26:27 main.go:37: [user-service] Failed to connect to database: failed to connect to `user=user database=users_db`:
+	[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connectex: An attempt was made to access a socket in a way forbidden by its access permissions.
+	127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connectex: No connection could be made because the target machine actively refused it.
+exit status 1
