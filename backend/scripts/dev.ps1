@@ -162,20 +162,13 @@ function Start-AppService {
 
     $logFile = Join-Path $BackendDir "logs\$Name.log"
     $errFile = Join-Path $BackendDir "logs\$Name.err.log"
-    $binDir = Join-Path $BackendDir "build"
     New-Item -ItemType Directory -Force -Path (Split-Path $logFile) | Out-Null
-    New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 
-    # go build 显式命名避免 cmd.exe 触发 Windows 安全策略
-    $bin = Join-Path $binDir "$Name.exe"
-    $srcDir = $Dir  # e.g. services/user-service
-    & go build -o $bin "./$srcDir/cmd/" 2>&1 | Out-File $errFile -Encoding utf8
-    if ($LASTEXITCODE -ne 0) {
-        Write-ErrorMsg "$Name 编译失败，查看 $errFile"
-        return
-    }
-
-    $proc = Start-Process -FilePath $bin `
+    # 进入服务目录，使用 go run（二进制在 %TEMP% 内，避免 Windows Defender 拦截项目目录下的 .exe）
+    $svcDir = Join-Path $BackendDir $Dir
+    $proc = Start-Process -FilePath "go" `
+        -ArgumentList "run", "./cmd/" `
+        -WorkingDirectory $svcDir `
         -RedirectStandardOutput $logFile `
         -RedirectStandardError $errFile `
         -NoNewWindow `
@@ -195,16 +188,9 @@ function Start-AllServices {
     foreach ($svc in $startOrder) {
         if ($svc -eq "gateway") {
             New-Item -ItemType Directory -Force -Path "$BackendDir\logs" | Out-Null
-            New-Item -ItemType Directory -Force -Path "$BackendDir\build" | Out-Null
-
-            # go build 显式命名避免 cmd.exe 触发 Windows 安全策略
-            & go build -o "$BackendDir\build\gateway.exe" ./gateway/cmd/ 2>&1 | Out-File "$BackendDir\logs\gateway.err.log" -Encoding utf8
-            if ($LASTEXITCODE -ne 0) {
-                Write-ErrorMsg "gateway 编译失败，查看 logs/gateway.err.log"
-                continue
-            }
-
-            $proc = Start-Process -FilePath "$BackendDir\build\gateway.exe" `
+            $proc = Start-Process -FilePath "go" `
+                -ArgumentList "run", "./gateway/cmd/" `
+                -WorkingDirectory $BackendDir `
                 -RedirectStandardOutput "$BackendDir\logs\gateway.log" `
                 -RedirectStandardError "$BackendDir\logs\gateway.err.log" `
                 -NoNewWindow `
